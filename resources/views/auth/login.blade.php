@@ -6,17 +6,7 @@
         @csrf
         <h1 class="text-center mb-20 text-5xl"></h1>
         <h1 class="text-center text-blue-500/100 mb-10 text-4xl">Авторизация</h1>
-           <!-- Общее сообщение об ошибке -->
-        @if ($errors->any())
-            <div class="mb-4 text-red-600">
-                <strong>Произошла ошибка при регистрации:</strong>
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+
         <!-- Email Address -->
         <div>
             <x-text-input id="email" class="block mt-1 w-full" type="email"  placeholder="Почта" name="email" :value="old('email')" required autofocus autocomplete="email" />

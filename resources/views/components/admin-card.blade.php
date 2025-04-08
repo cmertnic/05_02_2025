@@ -1,41 +1,40 @@
 <div class="flex justify-center items-center bg-gray-100">
     <div class="bg-white shadow-md rounded-lg p-4 max-w-md w-full mb-2">
-        <h2 class="font-bold text-xl mb-2">Заявка от {{ $report->created_at ? $report->created_at->format('d.m.Y') : 'Неизвестное время' }}</h2>
-        <p><strong>Клиент:</strong> {{ $report->client->name ?? 'Неизвестный клиент' }}</p> 
-        <p><strong>Время:</strong> {{ $report->time }}</p>
-            <select id="statusSelect-{{ $report->id }}" name="statues_id" onchange="updateStatus(this, '{{ $report->id }}');">
-                @foreach($statues as $status)
-                    <option value="{{ $status->id }}" {{ $report->statues_id == $status->id ? 'selected' : '' }}>{{ $status->name }}</option>
-                @endforeach
-            </select>
-        </p>
+        <h2 class="font-bold text-xl mb-2">Заявка от {{ $work->created_at ? $work->created_at->format('d.m.Y') : 'Неизвестное время' }}</h2>
+        <p><strong>ФИО участника:</strong> {{ $work->user->lastname . ' ' . $work->user->midlename . ' ' . $work->user->name }}</p>
+        <p><strong>Класс:</strong> {{ $work->user->class }}</p>
+        <p><strong>Школа:</strong> {{ $work->user->school }}</p>
+        <p><strong>Название работы:</strong> {{ $work->title }}</p>
+        <p><strong>Категория:</strong> {{ $work->category->title }}</p>
+        <p><strong>Время:</strong> {{ $work->created_at }}</p>
+
+        @if($work->path_img)
+            <div class="mt-4">
+                <img src="{{ Storage::url($work->path_img) }}" class="contact-block_img" alt="Изображение открытки">
+                <a href="{{ Storage::url($work->path_img) }}" download class="text-blue-500 underline">Скачать изображение</a>
+            </div>
+        @else
+            <span>Нет изображения</span>
+        @endif
+
+        <!-- Поле для выставления итогового балла -->
+        <div class="mt-4">
+            <label for="scoreInput-{{ $work->id }}" class="block font-bold">Итоговый балл:</label>
+            <input type="number" id="scoreInput-{{ $work->id }}" value="{{ $work->score }}" class="border rounded p-2 w-full" min="0">
+            <button onclick="updateScore('{{ $work->id }}')" class="mt-2 bg-blue-500 text-white rounded p-2">Сохранить балл</button>
+        </div>
     </div>
 </div>
 
 <script>
-function updateStatus(selectElement, reportId) {
-    const selectedValue = selectElement.value;
-    let textColor;
-
-    switch (selectedValue) {
-        case '1':
-            textColor = 'black'; 
-            break;
-        case '2':
-            textColor = 'blue'; 
-            break;
-        case '3':
-            textColor = 'red'; 
-            break;
-        default:
-            textColor = 'black';
-    }
-    selectElement.style.color = textColor;
+function updateScore(workId) {
+    const scoreInput = document.getElementById(`scoreInput-${workId}`);
+    const scoreValue = scoreInput.value;
 
     const formData = new FormData();
-    formData.append('status_id', selectedValue);
+    formData.append('score', scoreValue);
     
-    fetch(`/reports/${reportId}`, {
+    fetch(`/works/${workId}/score`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -45,9 +44,9 @@ function updateStatus(selectElement, reportId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Статус успешно обновлён');
+            alert('Балл успешно обновлён');
         } else {
-            alert('Ошибка при обновлении статуса');
+            alert('Ошибка при обновлении балла');
         }
     })
     .catch(error => {

@@ -8,24 +8,38 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Storage;
 class ReportController extends Controller
-{   private function isAdminByEmail($email)
+{
+    private function isAdminByEmail($email)
     {
         return Auth::check() && Auth::user()->email === "admin@admin.com";
     }
-    
+
     public function adminIndex()
     {
-    if (!$this->isAdminByEmail('admin@example.com')) {
-      abort(403, 'Недостаточно полномочий для доступа к этой странице.');
-    }
+        if (!$this->isAdminByEmail('admin@example.com')) {
+            abort(403, 'Недостаточно полномочий для доступа к этой странице.');
+        }
         $works = Work::paginate(10);
         $categories = Category::all();
 
         return view('admin', compact('works', 'categories'));
     }
-
+    public function updateScore(Request $request, $id)
+    {
+        $request->validate([
+            'score' => 'required|numeric|min:0',
+        ]);
+    
+        $work = Work::findOrFail($id);
+    
+        $work->score = $request->input('score');
+        $work->save();
+    
+        return response()->json(['success' => true]);
+    }
+    
     public function updateStatus(Request $request, $id)
     {
         $work = Work::findOrFail($id);
@@ -48,7 +62,6 @@ class ReportController extends Controller
     }
 
 
-
     public function index()
     {
         $works = Work::where('user_id', Auth::id())->paginate(10);
@@ -58,31 +71,42 @@ class ReportController extends Controller
     public function create()
     {
         $categories = Category::all();
+        $user = Auth::user();
 
-        return view('request', compact('categories'));  
+        return view('request', compact('categories', 'user'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'title' => 'required|string|max:255',
-            'path_img' => 'required|string|max:255',
-            'score' => 'required|string|max:255',
+            'path_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'category_id' => 'required|exists:categories,id',
         ]);
-
-
-
-        Work::create([
-            'title' => $data['title'],
-            'path_img' => $data['path_img'],
-            'score' => $data['score'],
-            'category_id' => $data['category_id'],
-            'user_id' => Auth::id(),
-        ]);
-
-        Log::info('Report created successfully.');
-
-        return redirect('/')->with('message', 'Создание заявки успешно!');
+    
+        if (Work::where('user_id', Auth::id())->exists()) {
+            return redirect()->back()->with('error', 'Вы уже отправили работу. Желаем удачи!');
+        }
+    
+        if ($request->hasFile('path_img')) {
+            $imageName=Storage::disk('public')->put('/reports',$request->file('path_img'));
+            $imageName=time() . '.' . $request['path_img']->extension();
+            $request['path_img']->move(public_path('storage'),$imageName);
+    
+            Work::create([
+                'title' => $data['title'],
+                'path_img' => $imageName, 
+                'score' => "0",
+                'category_id' => $data['category_id'],
+                'user_id' => Auth::id(),
+            ]);
+    
+            return redirect('/')->with('message', 'Создание заявки успешно!');
+        } else {
+            return redirect()->back()->with('error', 'Файл не загружен. Пожалуйста, попробуйте еще раз.');
+        }
     }
+    
+    
+
 }

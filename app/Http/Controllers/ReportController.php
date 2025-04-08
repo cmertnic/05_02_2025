@@ -2,54 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Statue;
-use App\Models\Report;
+use App\Models\Category;
+use App\Models\Work;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
-{   //private function isAdminByEmail($email)
-    //{
-    //    return Auth::check() && Auth::user()->email === $email;
-    //}
+{   private function isAdminByEmail($email)
+    {
+        return Auth::check() && Auth::user()->email === "admin@admin.com";
+    }
     
-  //  private function isAdmin()
-  //  {
-  //      return Auth::check() && Auth::user()->role === 'admin';
-  //  }
     public function adminIndex()
     {
-    //    if (!$this->isAdmin()) {
-    //        abort(403, 'Недостаточно полномочий для доступа к этой странице.');
-    //    }
-    //if (!$this->isAdminByEmail('admin@example.com')) {
-    //   abort(403, 'Недостаточно полномочий для доступа к этой странице.');
-    //}
-        $reports = Report::paginate(10);
-        $statues = Statue::all();
+    if (!$this->isAdminByEmail('admin@example.com')) {
+      abort(403, 'Недостаточно полномочий для доступа к этой странице.');
+    }
+        $works = Work::paginate(10);
+        $categories = Category::all();
 
-        return view('admin', compact('reports', 'statues'));
+        return view('admin', compact('works', 'categories'));
     }
 
     public function updateStatus(Request $request, $id)
     {
-        $report = Report::findOrFail($id);
-        $report->statues_id = $request->input('status_id');
-        $report->save();
+        $work = Work::findOrFail($id);
+        $work->category_id = $request->input('category_id');
+        $work->save();
 
         return response()->json(['success' => true]);
     }
     public function update(Request $request, $id)
     {
         $request->validate([
-            'statues_id' => 'required|exists:statues,id',
+            'category_id' => 'required|exists:category,id',
         ]);
 
-        $report = Report::findOrFail($id);
-        $report->statues_id = $request->statues_id;
-        $report->save();
+        $work = Work::findOrFail($id);
+        $work->categories_id = $request->categories_id;
+        $work->save();
 
         return redirect()->route('admin.index')->with('success', 'Статус обновлён успешно!');
     }
@@ -58,31 +51,33 @@ class ReportController extends Controller
 
     public function index()
     {
-        $reports = Report::where('user_id', Auth::id())->paginate(10);
-        return view('welcome', ['reports' => $reports]);
+        $works = Work::where('user_id', Auth::id())->paginate(10);
+        return view('welcome', ['works' => $works]);
     }
 
     public function create()
     {
-        // $services = Service::all();
-        $statues = Statue::all();
+        $categories = Category::all();
 
-        return view('request', compact('statues')); //('services', 'statues')); 
+        return view('request', compact('categories'));  
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            '' => 'required|string|max:255',
-            //   'service_id' => 'required|exists:services,id',
+            'title' => 'required|string|max:255',
+            'path_img' => 'required|string|max:255',
+            'score' => 'required|string|max:255',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
 
 
-        Report::create([
-            '' => $data[''],
-            //'service_id' => $data['service_id'],
-            'statues_id' => 1,
+        Work::create([
+            'title' => $data['title'],
+            'path_img' => $data['path_img'],
+            'score' => $data['score'],
+            'category_id' => $data['category_id'],
             'user_id' => Auth::id(),
         ]);
 

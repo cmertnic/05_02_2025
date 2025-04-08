@@ -5,13 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Report extends Model
+class Work extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        '',
-        'statues_id', 
+        'title',
+        'path_img',
+        'score',
+        'category_id', 
         'user_id',
     ];
 
@@ -20,9 +22,9 @@ class Report extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function statue() 
+    public function category() 
     {
-        return $this->belongsTo(Statue::class, 'statues_id'); 
+        return $this->belongsTo(Category::class, 'category_id'); 
     }      
     
 }
